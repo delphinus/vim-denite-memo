@@ -7,7 +7,7 @@
 from distutils.spawn import find_executable
 import re
 import subprocess
-from denite.source.base import Base
+from .base import Base
 
 SEPARATOR = '{0}:{0}'.format(chr(0xa0))
 MEMO_DIR = re.compile(r'^memodir = "(.*?)"$', re.M)

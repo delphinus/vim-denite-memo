@@ -5,7 +5,7 @@
 # ============================================================================
 
 import subprocess
-from denite.source.grep import Source as Grep
+from .grep import Source as Grep
 from .memo import Memo, CommandNotFoundError
 
 
