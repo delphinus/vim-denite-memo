@@ -7,6 +7,7 @@
 from distutils.spawn import find_executable
 import re
 import subprocess
+from denite import process
 from .base import Base
 
 SEPARATOR = '{0}:{0}'.format(chr(0xa0))
@@ -21,22 +22,30 @@ class Source(Base):
         self.kind = 'memo'
 
     def on_init(self, context):
+        context['__proc'] = None
         context['__memo'] = Memo()
 
     def gather_candidates(self, context):
         if context['args'] and context['args'][0] == 'new':
             return self._is_new(context)
 
-        try:
-            txt = context['__memo'].run(
-                'list', '--format', '{{.Fullpath}}\t{{.File}}\t{{.Title}}')
-        except subprocess.CalledProcessError as err:
-            self.error_message(
-                context, 'command returned invalid response: ' + str(err))
-            return []
-        if not txt:
-            return []
-        rows = txt.splitlines()
+        if context['__proc']:
+            return self.__async_gather_candidates(
+                context, context['async_timeout'])
+
+        context['__proc'] = context['__memo'].proc(
+            context,
+            'list', '--format', '{{.Fullpath}}\t{{.File}}\t{{.Title}}')
+        return self.__async_gather_candidates(
+            context, context['async_timeout'])
+
+    def __async_gather_candidates(self, context, timeout):
+        outs, errs = context['__proc'].communicate(timeout=timeout)
+        if errs:
+            self.error_message(context, errs)
+        context['is_async'] = not context['__proc'].eof()
+        if context['__proc'].eof():
+            context['__proc'] = None
 
         opt = self.vim.options
         col = opt['column'] if 'column' in opt else 20
@@ -49,7 +58,7 @@ class Source(Base):
                 'abbr': '{0}{1}{2}'.format(cut, SEPARATOR, title),
                 'action__path': fullpath,
                 }
-        return list(map(make_candidates, rows))
+        return list(map(make_candidates, outs))
 
     def _is_new(self, context):
         if 'memo_dir' not in self.vars or not self.vars['memo_dir']:
@@ -125,6 +134,10 @@ class Memo:
         command = [self.command, *args]
         cmd = subprocess.run(command, stdout=subprocess.PIPE, check=True)
         return cmd.stdout.decode('utf-8')
+
+    def proc(self, context, *args):
+        command = [self.command, *args]
+        return process.Process(command, context, context['path'])
 
     def get_memo_dir(self):
         txt = self.run('config', '--cat')
