@@ -36,7 +36,7 @@ class Kind(File):
             elif nr != self.vim.current.buffer:
                 self.vim.command('buffer' + str(self.vim.funcs.bufnr(path)))
 
-            self.__jump(context, target)
+            self._jump(context, target)
 
     def _escape(self, title):
         title = INVALID_CHAR.sub('-', title)
