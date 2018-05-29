@@ -11,8 +11,12 @@ from unicodedata import east_asian_width, normalize
 from denite import process
 from .base import Base
 
-SEPARATOR = '{0}:{0}'.format(chr(0xa0))
 MEMO_DIR = re.compile(r'^memodir = "(.*?)"$', re.M)
+HIGHLIGHT_SYNTAX = [
+    {'name': 'Prefix', 'link': 'String', 're': r'\[new title\]'},
+    {'name': 'File', 'link': 'String', 're': r'\v.*( : )@='},
+    {'name': 'Title', 'link': 'Function', 're': r'\v( : )@<=.*'},
+]
 
 class Source(Base):
 
@@ -57,7 +61,7 @@ class Source(Base):
             cut = self._stdwidthpart(filename, self.vars['column'])
             return {
                 'word': filename,
-                'abbr': '{0}{1}{2}'.format(cut, SEPARATOR, title),
+                'abbr': '{0} : {1}'.format(cut, title),
                 'action__path': fullpath,
                 }
         return list(map(make_candidates, outs))
@@ -118,22 +122,12 @@ class Source(Base):
             result_len = next_len
 
     def highlight(self):
-        self.vim.command(
-            'syntax match {0}_Prefix /{1}/ contained containedin={0}'
-            .format(self.syntax_name, r'\[new title\]'))
-        self.vim.command('highlight default link {0}_Prefix String'
-                         .format(self.syntax_name))
-
-        self.vim.command(
-            'syntax match {0}_File /{1}/ contained containedin={0}'
-            .format(self.syntax_name, r'\v.*({0})@='.format(SEPARATOR)))
-        self.vim.command('highlight default link {0}_File String'
-                         .format(self.syntax_name))
-        self.vim.command(
-            'syntax match {0}_Title /{1}/ contained containedin={0}'
-            .format(self.syntax_name, r'\v({0})@<=.*'.format(SEPARATOR)))
-        self.vim.command('highlight default link {0}_Title Function'
-                         .format(self.syntax_name))
+        for syn in HIGHLIGHT_SYNTAX:
+            self.vim.command(
+                'syntax match {0}_{1} /{2}/ contained containedin={0}'
+                .format(self.syntax_name, syn['name'], syn['re']))
+            self.vim.command('highlight default link {0}_{1} {2}'.format(
+                self.syntax_name, syn['name'], syn['link']))
 
 
 class CommandNotFoundError(Exception):
