@@ -7,6 +7,7 @@
 from distutils.spawn import find_executable
 import re
 import subprocess
+from unicodedata import east_asian_width, normalize
 from denite import process
 from .base import Base
 
@@ -22,6 +23,7 @@ class Source(Base):
         self.kind = 'memo'
         self.vars = {
             'column': 20,
+            'ambiwidth': vim.options['ambiwidth'],
         }
 
     def on_init(self, context):
@@ -82,22 +84,38 @@ class Source(Base):
             }]
 
     def _stdwidthpart(self, string, col):
-        slen = self.vim.funcs.strwidth(string)
+        to_double = 'FW' if self.vars['ambiwidth'] == 'single' else 'FWA'
+        cache = {}
+
+        def east_asian_width_count(char):
+            '''
+            this func returns 2 if it is Zenkaku string, 1 if other.  Each
+            type, 'F', 'W', 'A', means below.
+
+            * F -- Fullwidth
+            * W -- Wide
+            * A -- Ambiguous
+            '''
+            if char not in cache:
+                cache[char] = 2 if east_asian_width(char) in to_double else 1
+            return cache[char]
+
+        # normalize string for filenames in macOS
+        norm = normalize('NFC', string)
+        slen = sum(east_asian_width_count(x) for x in norm)
         if slen < col:
-            return string + ' ' * (col - slen)
+            return norm + ' ' * (col - slen)
         result = ''
-        i = 0
-        while True:
-            char = string[i:i+1]
-            next_r = result + char
-            nlen = self.vim.funcs.strwidth(next_r)
-            if nlen > col - 3:
-                rlen = self.vim.funcs.strwidth(result)
-                return result + ('....' if rlen < col - 3 else '...')
-            elif nlen == col - 3:
-                return next_r + '...'
-            result = next_r
-            i += 1
+        result_len = 0
+        for char in norm:
+            next_result = result + char
+            next_len = result_len + east_asian_width_count(char)
+            if next_len > col - 3:
+                return result + ('....' if result_len < col - 3 else '...')
+            elif next_len == col - 3:
+                return next_result + '...'
+            result = next_result
+            result_len = next_len
 
     def highlight(self):
         self.vim.command(
