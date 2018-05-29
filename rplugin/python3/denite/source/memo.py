@@ -20,6 +20,9 @@ class Source(Base):
 
         self.name = 'memo'
         self.kind = 'memo'
+        self.vars = {
+            'column': 20,
+        }
 
     def on_init(self, context):
         context['__proc'] = None
@@ -47,12 +50,9 @@ class Source(Base):
         if context['__proc'].eof():
             context['__proc'] = None
 
-        opt = self.vim.options
-        col = opt['column'] if 'column' in opt else 20
-
         def make_candidates(row):
             fullpath, filename, title = row.split('\t', 2)
-            cut = self._stdwidthpart(filename, col)
+            cut = self._stdwidthpart(filename, self.vars['column'])
             return {
                 'word': filename,
                 'abbr': '{0}{1}{2}'.format(cut, SEPARATOR, title),
