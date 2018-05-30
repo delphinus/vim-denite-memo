@@ -5,8 +5,12 @@
 # ============================================================================
 
 import subprocess
+import sys
+from os.path import dirname
+sys.path.append(dirname(dirname(__file__)))
+
+from memo_cmd import Memo, CommandNotFoundError
 from .grep import Source as Grep
-from .memo import Memo, CommandNotFoundError
 
 
 class Source(Grep):

@@ -4,14 +4,15 @@
 # License: MIT license
 # ============================================================================
 
-from distutils.spawn import find_executable
-import re
 import subprocess
 from unicodedata import east_asian_width, normalize
-from denite import process
+import sys
+from os.path import dirname
+sys.path.append(dirname(dirname(__file__)))
+
+from memo_cmd import Memo
 from .base import Base
 
-MEMO_DIR = re.compile(r'^memodir = "(.*?)"$', re.M)
 HIGHLIGHT_SYNTAX = [
     {'name': 'Prefix', 'link': 'String', 're': r'\[new title\]'},
     {'name': 'File', 'link': 'String', 're': r'\v.*( : )@='},
@@ -128,30 +129,3 @@ class Source(Base):
                 .format(self.syntax_name, syn['name'], syn['re']))
             self.vim.command('highlight default link {0}_{1} {2}'.format(
                 self.syntax_name, syn['name'], syn['link']))
-
-
-class CommandNotFoundError(Exception):
-    pass
-
-
-class Memo:
-
-    def __init__(self):
-        command = find_executable('memo')
-        if not command:
-            raise CommandNotFoundError
-        self.command = command
-
-    def run(self, *args):
-        command = [self.command, *args]
-        cmd = subprocess.run(command, stdout=subprocess.PIPE, check=True)
-        return cmd.stdout.decode('utf-8')
-
-    def proc(self, context, *args):
-        command = [self.command, *args]
-        return process.Process(command, context, context['path'])
-
-    def get_memo_dir(self):
-        txt = self.run('config', '--cat')
-        match = MEMO_DIR.search(txt)
-        return match.group(1) if match else ''
