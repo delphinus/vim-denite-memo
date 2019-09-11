@@ -10,10 +10,10 @@ install:
 
 script:
   - SRC=$(find . -name '*.py' | perl -pe 's,^\./,,')
-  - export MYPYPATH=/tmp/denite.nvim/rplugin/python3:$MYPYPATH
   - |-
     RESULT=$(
       for i in $SRC; do
+        export MYPYPATH=/tmp/denite.nvim/rplugin/python3:rplugin/python3
         mypy --strict $i | grep "^$i" | tee /dev/tty
       done
     )
