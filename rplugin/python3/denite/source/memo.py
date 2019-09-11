@@ -7,12 +7,12 @@
 import subprocess
 from unicodedata import east_asian_width, normalize
 import sys
-from os.path import dirname
+from pathlib import Path
 from typing import Dict
 
-sys.path.append(dirname(dirname(dirname(__file__))))
+sys.path.append(str(Path(__file__).parent.parent.parent.resolve()))
 
-from denite.memo_cmd import Memo
+from vim_denite_memo.command import Memo
 from denite.source.base import Base
 from denite.util import Candidate, Candidates, UserContext, Nvim
 

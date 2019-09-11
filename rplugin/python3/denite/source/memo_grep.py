@@ -6,11 +6,11 @@
 
 import subprocess
 import sys
-from os.path import dirname
+from pathlib import Path
 
-sys.path.append(dirname(dirname(dirname(__file__))))
+sys.path.append(str(Path(__file__).parent.parent.parent.resolve()))
 
-from denite.memo_cmd import Memo, CommandNotFoundError
+from vim_denite_memo.command import Memo, CommandNotFoundError
 from denite.source.grep import Source as Grep
 from denite.util import Nvim, UserContext
 
