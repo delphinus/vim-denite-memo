@@ -7,26 +7,28 @@
 import subprocess
 import sys
 from os.path import dirname
-sys.path.append(dirname(dirname(__file__)))
 
-from memo_cmd import Memo, CommandNotFoundError
-from .grep import Source as Grep
+sys.path.append(dirname(dirname(dirname(__file__))))
+
+from denite.memo_cmd import Memo, CommandNotFoundError
+from denite.source.grep import Source as Grep
+from denite.util import Nvim, UserContext
 
 
 class Source(Grep):
-
-    def __init__(self, vim):
+    def __init__(self, vim: Nvim):
         super().__init__(vim)
 
-        self.name = 'memo/grep'
+        self.name = "memo/grep"
 
-    def on_init(self, context):
+    def on_init(self, context: UserContext) -> None:
         try:
             memo_dir = Memo().get_memo_dir()
         except CommandNotFoundError as err:
             self.error_message(context, str(err))
         except subprocess.CalledProcessError as err:
             self.error_message(
-                context, 'command returned invalid response: ' + str(err))
-        context['args'].insert(0, memo_dir)
+                context, "command returned invalid response: " + str(err)
+            )
+        context["args"].insert(0, memo_dir)
         super().on_init(context)

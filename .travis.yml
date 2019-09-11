@@ -1,0 +1,39 @@
+---
+language: python
+
+python:
+  - 3.7
+
+install:
+  - pip install mypy
+  - git clone https://github.com/Shougo/denite.nvim /tmp/denite.nvim
+
+script:
+  - SRC=$(find . -name '*.py' | perl -pe 's,^\./,,')
+  - |-
+    RESULT=$(
+      for i in $SRC; do
+        export MYPYPATH=/tmp/denite.nvim/rplugin/python3:rplugin/python3
+        mypy --strict $i | grep "^$i" | tee /dev/tty
+      done
+    )
+  - |-
+    if [[ -n $RESULT ]]; then
+      exit 1
+    fi
+
+notifications:
+  slack:
+    rooms:
+      secure: "myiFCPvI8ppTFSfG2S8Fz7SC20zeKet+OEl2BB1z5v1ppXkiCO7XQtFjuPC7q0vc\
+               bUlHjCtatMqCT13ZnzqeOQ9AdshKekszB+ac+9/AlCiRQCRUYCQyLfSDB00PIYqt\
+               gUiVjPFvEtNIN1nxUWO/FjrAhAFU39XQ+eiNW8rFl5FeA0hJ8d6jBnIDPgxsprkp\
+               ugUzGY2LZ8Sq1LvbJ9XQcnDhETMn4ubbDHrH+sYHVhjS95s+yI9Yq+23D9JN8V0c\
+               w2hEdZkcY9iz0LXUmRAeiHJtsFAPGcRhS4cR/whz12P0GVYnqm6KBB2hPy51XGkd\
+               IPeqpuWzu8JUliKZKVmurITXepa2jl34sGoijEc7iHOHU5pvonYGOxE36DGunWu4\
+               xDz26ruO6TzPdPSyZw+JrRDwm1RKLX4EMc940m5Wf9fHGKVSG7ibeS6YH3ClA9+R\
+               Q/H2WRoybVyRXn8+FsbadZZr7c0iFuDF5bQ3Rhv7BHVDXoSBosDx5N990bwW7EAX\
+               t5elYBqcvw77moqAt0OVng67NfeKq61kf6z4YWaW4lXI4d67m/yrYkPgw3X12eJ+\
+               spLjUj/afTvY99LAE+O98ZeVdNZJ1Y6HRbBF2GwndMzs5cmjFj/dJ+G5nr/b/f76\
+               SLJHm91inqjDEjLK/Ii2vnwpdjuS4aJw5RdPkmQFCvw="
+    on_success: never
