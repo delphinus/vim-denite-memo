@@ -2,6 +2,7 @@ from distutils.spawn import find_executable
 import re
 import subprocess
 from denite import process
+from denite.util import UserContext
 
 MEMO_DIR = re.compile(r'^memodir = "(.*?)"$', re.M)
 
@@ -11,23 +12,23 @@ class CommandNotFoundError(Exception):
 
 
 class Memo:
-
-    def __init__(self):
-        command = find_executable('memo')
+    def __init__(self) -> None:
+        command = find_executable("memo")
         if not command:
             raise CommandNotFoundError
         self.command = command
 
-    def run(self, *args):
+    def run(self, *args: str) -> str:
         command = [self.command, *args]
         cmd = subprocess.run(command, stdout=subprocess.PIPE, check=True)
-        return cmd.stdout.decode('utf-8')
+        out: bytes = cmd.stdout
+        return out.decode("utf-8")
 
-    def proc(self, context, *args):
+    def proc(self, context: UserContext, *args: str) -> process.Process:
         command = [self.command, *args]
-        return process.Process(command, context, context['path'])
+        return process.Process(command, context, context["path"])
 
-    def get_memo_dir(self):
-        txt = self.run('config', '--cat')
+    def get_memo_dir(self) -> str:
+        txt = self.run("config", "--cat")
         match = MEMO_DIR.search(txt)
-        return match.group(1) if match else ''
+        return match.group(1) if match else ""
