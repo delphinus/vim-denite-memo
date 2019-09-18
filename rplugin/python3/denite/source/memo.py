@@ -4,15 +4,16 @@
 # License: MIT license
 # ============================================================================
 
-import subprocess
-from unicodedata import east_asian_width, normalize
+from subprocess import CalledProcessError
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Optional, cast
 
 sys.path.append(str(Path(__file__).parent.parent.parent.resolve()))
 
 from vim_denite_memo.command import Memo
+from vim_denite_memo.string import stdwidthpart
+from denite import process
 from denite.source.base import Base
 from denite.util import Candidate, Candidates, UserContext, Nvim
 
@@ -32,37 +33,42 @@ class Source(Base):
         self.vars = {"column": 20, "ambiwidth": vim.options["ambiwidth"]}
 
     def on_init(self, context: UserContext) -> None:
-        context["__proc"] = None
-        context["__memo"] = Memo()
+        self.__set_proc(context, None)
+        self.__set_memo(context, Memo())
 
     def gather_candidates(self, context: UserContext) -> Candidates:
         if context["args"] and context["args"][0] == "new":
             return self._is_new(context)
 
-        if context["__proc"]:
+        if self.__proc(context):
             return self.__async_gather_candidates(context, context["async_timeout"])
 
-        context["__proc"] = context["__memo"].proc(
+        proc = self.__memo(context).proc(
             context, "list", "--format", "{{.Fullpath}}\t{{.File}}\t{{.Title}}"
         )
+        self.__set_proc(context, proc)
         return self.__async_gather_candidates(context, context["async_timeout"])
 
     def __async_gather_candidates(
         self, context: UserContext, timeout: int
     ) -> Candidates:
-        outs, errs = context["__proc"].communicate(timeout=timeout)
+        proc = self.__proc(context)
+        if not proc:
+            context["is_async"] = False
+            return []
+        outs, errs = proc.communicate(timeout=timeout)
         if errs:
             self.error_message(context, errs)
-        context["is_async"] = not context["__proc"].eof()
-        if context["__proc"].eof():
-            context["__proc"] = None
+        context["is_async"] = not proc.eof()
+        if proc.eof():
+            self.__set_proc(context, None)
 
         def make_candidates(row: str) -> Candidate:
             fullpath, filename, title = row.split("\t", 2)
-            cut = self._stdwidthpart(filename, self.vars["column"])
+            cut = stdwidthpart(filename, self.vars["column"], self.vars["ambiwidth"])
             return {
                 "word": filename,
-                "abbr": "{0} : {1}".format(cut, title),
+                "abbr": f"{cut} : {title}",
                 "action__path": fullpath,
             }
 
@@ -71,8 +77,8 @@ class Source(Base):
     def _is_new(self, context: UserContext) -> Candidates:
         if "memo_dir" not in self.vars or not self.vars["memo_dir"]:
             try:
-                self.vars["memo_dir"] = context["__memo"].get_memo_dir()
-            except subprocess.CalledProcessError as err:
+                self.vars["memo_dir"] = self.__memo(context).get_memo_dir()
+            except CalledProcessError as err:
                 self.error_message(
                     context, "command returned invalid response: " + str(err)
                 )
@@ -92,41 +98,6 @@ class Source(Base):
             }
         ]
 
-    def _stdwidthpart(self, string: str, col: int) -> str:
-        to_double = "FW" if self.vars["ambiwidth"] == "single" else "FWA"
-        cache: Dict[str, int] = {}
-
-        def east_asian_width_count(char: str) -> int:
-            """
-            this func returns 2 if it is Zenkaku string, 1 if other.  Each
-            type, 'F', 'W', 'A', means below.
-
-            * F -- Fullwidth
-            * W -- Wide
-            * A -- Ambiguous
-            """
-            if char not in cache:
-                cache[char] = 2 if east_asian_width(char) in to_double else 1
-            return cache[char]
-
-        # normalize string for filenames in macOS
-        norm = normalize("NFC", string)
-        slen = sum(east_asian_width_count(x) for x in norm)
-        if slen < col:
-            return norm + " " * (col - slen)
-        result = ""
-        result_len = 0
-        for char in norm:
-            next_result = result + char
-            next_len = result_len + east_asian_width_count(char)
-            if next_len > col - 3:
-                return result + ("...." if result_len < col - 3 else "...")
-            elif next_len == col - 3:
-                return next_result + "..."
-            result = next_result
-            result_len = next_len
-        return ""
-
     def highlight(self) -> None:
         for syn in HIGHLIGHT_SYNTAX:
             self.vim.command(
@@ -139,3 +110,15 @@ class Source(Base):
                     self.syntax_name, syn["name"], syn["link"]
                 )
             )
+
+    def __memo(self, context: UserContext) -> Memo:
+        return cast(Memo, context["__memo"])
+
+    def __set_memo(self, context: UserContext, memo: Memo) -> None:
+        context["__memo"] = memo
+
+    def __proc(self, context: UserContext) -> Optional[process.Process]:
+        return cast(process.Process, context["__proc"]) if context["__proc"] else None
+
+    def __set_proc(self, context: UserContext, proc: Optional[process.Process]) -> None:
+        context["__proc"] = proc
