@@ -34,7 +34,7 @@ class Kind(File):
             if nr <= 0:
                 self.vim.call("denite#util#execute_path", "edit", path)
                 if not self.vim.funcs.getline(1):
-                    self.vim.funcs.append(0, "# {target['action__title']}")
+                    self.vim.funcs.append(0, f"# {target['action__title']}")
             elif nr != self.vim.current.buffer:
                 self.vim.command("buffer" + str(self.vim.funcs.bufnr(path)))
 
