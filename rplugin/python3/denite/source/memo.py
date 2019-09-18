@@ -4,15 +4,15 @@
 # License: MIT license
 # ============================================================================
 
-import subprocess
-from unicodedata import east_asian_width, normalize
+from subprocess import CalledProcessError
 import sys
 from pathlib import Path
-from typing import Dict, Optional, cast
+from typing import Optional, cast
 
 sys.path.append(str(Path(__file__).parent.parent.parent.resolve()))
 
 from vim_denite_memo.command import Memo
+from vim_denite_memo.string import stdwidthpart
 from denite import process
 from denite.source.base import Base
 from denite.util import Candidate, Candidates, UserContext, Nvim
@@ -65,10 +65,10 @@ class Source(Base):
 
         def make_candidates(row: str) -> Candidate:
             fullpath, filename, title = row.split("\t", 2)
-            cut = self._stdwidthpart(filename, self.vars["column"])
+            cut = stdwidthpart(filename, self.vars["column"], self.vars["ambiwidth"])
             return {
                 "word": filename,
-                "abbr": "{0} : {1}".format(cut, title),
+                "abbr": f"{cut} : {title}",
                 "action__path": fullpath,
             }
 
@@ -78,7 +78,7 @@ class Source(Base):
         if "memo_dir" not in self.vars or not self.vars["memo_dir"]:
             try:
                 self.vars["memo_dir"] = self.__memo(context).get_memo_dir()
-            except subprocess.CalledProcessError as err:
+            except CalledProcessError as err:
                 self.error_message(
                     context, "command returned invalid response: " + str(err)
                 )
@@ -97,41 +97,6 @@ class Source(Base):
                 "action__is_new": True,
             }
         ]
-
-    def _stdwidthpart(self, string: str, col: int) -> str:
-        to_double = "FW" if self.vars["ambiwidth"] == "single" else "FWA"
-        cache: Dict[str, int] = {}
-
-        def east_asian_width_count(char: str) -> int:
-            """
-            this func returns 2 if it is Zenkaku string, 1 if other.  Each
-            type, 'F', 'W', 'A', means below.
-
-            * F -- Fullwidth
-            * W -- Wide
-            * A -- Ambiguous
-            """
-            if char not in cache:
-                cache[char] = 2 if east_asian_width(char) in to_double else 1
-            return cache[char]
-
-        # normalize string for filenames in macOS
-        norm = normalize("NFC", string)
-        slen = sum(east_asian_width_count(x) for x in norm)
-        if slen < col:
-            return norm + " " * (col - slen)
-        result = ""
-        result_len = 0
-        for char in norm:
-            next_result = result + char
-            next_len = result_len + east_asian_width_count(char)
-            if next_len > col - 3:
-                return result + ("...." if result_len < col - 3 else "...")
-            elif next_len == col - 3:
-                return next_result + "..."
-            result = next_result
-            result_len = next_len
-        return ""
 
     def highlight(self) -> None:
         for syn in HIGHLIGHT_SYNTAX:
