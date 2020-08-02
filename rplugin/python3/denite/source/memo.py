@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Optional, cast
 
-sys.path.append(str(Path(__file__).parent.parent.parent.resolve()))
+sys.path.append(str(Path(__file__).parent.parent.resolve()))
 
 from vim_denite_memo.command import Memo
 from vim_denite_memo.string import stdwidthpart

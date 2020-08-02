@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent.parent.parent.resolve()))
+sys.path.append(str(Path(__file__).parent.parent.resolve()))
 
 from vim_denite_memo.command import Memo, CommandNotFoundError
 from denite.source.grep import Source as Grep
