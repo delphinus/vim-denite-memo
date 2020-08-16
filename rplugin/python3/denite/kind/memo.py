@@ -2,7 +2,7 @@ from datetime import date
 import re
 import os.path
 from denite.kind.file import Kind as File
-from denite.util import Candidate, Nvim, UserContext
+from denite.util import Nvim, UserContext
 from typing import Dict, List
 
 INVALID_CHAR = re.compile(r'[ <>:"/\\|?*%#]')
