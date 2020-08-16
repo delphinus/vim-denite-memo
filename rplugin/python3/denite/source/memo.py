@@ -18,6 +18,7 @@ HIGHLIGHT_SYNTAX = [
     {"name": "File", "link": "String", "re": r"\v.*( : )@="},
     {"name": "Title", "link": "Function", "re": r"\v( : )@<=.*"},
 ]
+IS_DARWIN = system() == "Darwin"
 
 
 class Source(Base):
@@ -118,7 +119,7 @@ class Source(Base):
 
     def __stdwidthpart(self, string: str, col: int, ambiwidth: str) -> str:
         # normalize string for filenames in macOS
-        target = normalize("NFC", string) if system() == "Darwin" else string
+        target = normalize("NFC", string) if IS_DARWIN else string
         char_lengths = [(x, self.__char_width(x, ambiwidth)) for x in target]
         sum_len = sum(x for (_, x) in char_lengths)
         if sum_len < col:
