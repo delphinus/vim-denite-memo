@@ -86,17 +86,19 @@ class Source(Base):
 
         context["is_interactive"] = True
         title = context["input"]
-        if not title:
-            return []
-        return [
-            {
-                "word": title,
-                "abbr": "[new title] " + title,
-                "action__memo_dir": self.vars["memo_dir"],
-                "action__title": title,
-                "action__is_new": True,
-            }
-        ]
+        return (
+            [
+                {
+                    "word": title,
+                    "abbr": "[new title] " + title,
+                    "action__memo_dir": self.vars["memo_dir"],
+                    "action__title": title,
+                    "action__is_new": True,
+                }
+            ]
+            if title
+            else []
+        )
 
     def highlight(self) -> None:
         for syn in HIGHLIGHT_SYNTAX:
@@ -139,8 +141,8 @@ class Source(Base):
 
     def __char_width(self, char: str, ambiwidth: str) -> int:
         """
-        this func returns 2 if it is Zenkaku string, 1 if other.  Each type, 'F',
-        'W', 'A', means below.
+        this func returns 2 if it is Zenkaku string, 1 if other.  Each type,
+        'F', 'W', 'A', means below.
 
         * F -- Fullwidth
         * W -- Wide

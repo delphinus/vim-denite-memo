@@ -5,7 +5,7 @@
 # ============================================================================
 
 from denite.source.grep import Source as Grep
-from denite.util import Nvim, UserContext
+from denite.util import Candidates, Nvim, UserContext
 
 
 class Source(Grep):
@@ -14,13 +14,15 @@ class Source(Grep):
 
         self.name = "memo/grep"
 
-    def on_init(self, context: UserContext):
+    def on_init(self, context: UserContext) -> None:
         if "memo_dir" not in self.vars or not self.vars["memo_dir"]:
             self.vars["memo_dir"] = self.vim.call("denite#memo#get_dir")
         context["args"].insert(0, self.vars["memo_dir"])
         return super().on_init(context)
 
-    def gather_candidates(self, context: UserContext):
-        if not self.vim.call("denite#memo#executable"):
-            return []
-        return super().gather_candidates(context)
+    def gather_candidates(self, context: UserContext) -> Candidates:
+        return (
+            super().gather_candidates(context)
+            if self.vim.call("denite#memo#executable")
+            else []
+        )
