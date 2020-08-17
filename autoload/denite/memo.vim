@@ -4,7 +4,7 @@ function denite#memo#executable() abort
   if executable(g:denite_memo_executable)
     return g:denite_memo_executable
   endif
-  call denite#util#print_error('cannot find `memo` executable. See :h g:denite_memo_executable')
+  call denite#util#print_error('cannot find `memo` executable')
   return v:null
 endfunction
 
