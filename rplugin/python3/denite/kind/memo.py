@@ -2,7 +2,7 @@ from datetime import date
 import re
 import os.path
 from denite.kind.file import Kind as File
-from denite.util import Candidate, Nvim, UserContext
+from denite.util import Nvim, UserContext
 from typing import Dict, List
 
 INVALID_CHAR = re.compile(r'[ <>:"/\\|?*%#]')
@@ -36,7 +36,7 @@ class Kind(File):
                 if not self.vim.funcs.getline(1):
                     self.vim.funcs.append(0, f"# {target['action__title']}")
             elif nr != self.vim.current.buffer:
-                self.vim.command("buffer" + str(self.vim.funcs.bufnr(path)))
+                self.vim.command(f"buffer {self.vim.funcs.bufnr(path)}")
 
             self._jump(context, target)
 
