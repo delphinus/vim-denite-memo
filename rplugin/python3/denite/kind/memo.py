@@ -36,7 +36,7 @@ class Kind(File):
                 if not self.vim.funcs.getline(1):
                     self.vim.funcs.append(0, f"# {target['action__title']}")
             elif nr != self.vim.current.buffer:
-                self.vim.command("buffer" + str(self.vim.funcs.bufnr(path)))
+                self.vim.command(f"buffer {self.vim.funcs.bufnr(path)}")
 
             self._jump(context, target)
 
