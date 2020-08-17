@@ -1,6 +1,6 @@
 let g:denite_memo_executable = get(g:, 'denite_memo_executable', 'memo')
 
-function denite#memo#executable() abort
+function! denite#memo#executable() abort
   if executable(g:denite_memo_executable)
     return g:denite_memo_executable
   endif
@@ -8,7 +8,7 @@ function denite#memo#executable() abort
   return v:null
 endfunction
 
-function denite#memo#get_dir() abort
+function! denite#memo#get_dir() abort
   let out = system(g:denite_memo_executable . ' config --cat')
   let dir = matchstr(out, '\_^memodir = "\zs.\{-1,}\ze"')
   if dir ==# ''
